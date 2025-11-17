@@ -1,3 +1,6 @@
+// This is for CODE.GS - Google Script to compile external sheet 
+
+
 function compilingMasterSheetScript() {
 
     var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
