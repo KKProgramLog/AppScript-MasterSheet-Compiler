@@ -153,25 +153,7 @@ function headerMapBuild() {
   })
 
   Logger.log(headerMapBuilder)
-
-  // return headerCheckMap(headerMapBuilder)
-
 }
-
-// function headerCheckMap(newmap){
-//   Logger.log(newmap)
-
-
-//   for (const key in newmap){
-//   Logger.log(key.toLowerCase().replace(/\s/g, ''))
-  
-//   }
-
-//   Logger.log(newmap)
-
-
-// }
-
 
 //-------------------------------------- Open External Sheet --------------------------------------
 function openExternalSheets(){
@@ -182,34 +164,29 @@ function openExternalSheets(){
 
     var externalSharedSheetsList = []
     SOURCE_SHEET_NAMES = []
-    SOURCE_RANGE = 'A1:D10'
+    // SOURCE_RANGE = 'A1:D10' - Don't need
 
 
     // This FOR LOOP is stricly to pull URL's 
     for (let i = 1; i < values.length; i++) {
+      // Logger.log(values[i]) - wokring
 
-      // Logger.log(values[i])
       if(values[i][2] == true && values[i][1] != '')  {
         externalSharedSheetsList.push(values[i][0])
         SOURCE_SHEET_NAMES.push(values[i][3])
 
-
         // confirms that we are pushing the correct names of users that uploaded their sheets
         // Logger.log(`You've made it:` +  values[i][1])
-
 
       } else if (values[i][2] == false && values[i][1] != '' && values[i][0] != '') {
 
         // Checks if we are at the end of the list where names were entered - With additional conditional checks.
         // Logger.log("you need to checkManagerCompiled his sheet") - working
 
-
       } else if (values[i][2] == false && values[i][1] != '' && values[i][0] == '') {
 
         // Checks which sheet was not uploaded and returns the name
         // Logger.log(`You're still missing user's sheet:` +  values[i][1]) - working 
-
-
       }
 
     }
@@ -223,14 +200,26 @@ function openExternalSheets(){
       var urlOpener = SpreadsheetApp.openByUrl(externalSharedSheetsList[j])
       var sheetNameOpener = urlOpener.getSheetByName(SOURCE_SHEET_NAMES[j])
 
-
-
-      var fetchSheetContentValues = sheetNameOpener.getDataRange().getValues()
-      Logger.log(fetchSheetContentValues)
-
-      compiledDataSheet.appendRow(fetchSheetContentValues[0])
-
+      // compiledDataSheet.appendRow(fetchSheetContentValues[0])
     }
+
+    // var fetchSheetContentValues = sheetNameOpener.getDataRange().getValues()
+    var fetchExternalSheetLastColumn = sheetNameOpener.getLastColumn()
+    var fetchExternalSheetHeaderRowValues = sheetNameOpener.getRange(1,1,1,fetchExternalSheetLastColumn).getValues()[0]
+
+    var externalSheetsHeader = {}
+
+    fetchExternalSheetHeaderRowValues.forEach(function(headerNormalizer, index){
+      // Basically this just ignores empty cells and get out of the loop
+      if(!headerNormalizer) return 
+
+      var normalizeExternalHeaders = normilizedHeader(headerNormalizer)
+      return externalSheetsHeader[normalizeExternalHeaders] = index + 1
+    })
+    
+    Logger.log(`The text has been normalized ` + JSON.stringify(externalSheetsHeader))
+    Logger.log(externalSheetsHeader)
+
 
     //---------------------------------------------------------------------------------------------------------------
 
@@ -240,5 +229,4 @@ function openExternalSheets(){
     return
   }
 }
-
 
