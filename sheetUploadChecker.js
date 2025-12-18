@@ -80,6 +80,99 @@ function usersSheetLinks() {
 
 }
 //---------------------------------------------------------------------------------------------------------------
+
+
+//-------------------------------------- Double Map practice --------------------------------------
+
+// function headerMapBuild() {
+//   var fetchLastHeaderColumn = compiledDataSheet.getLastColumn();
+//   var fetchHeaderRowValues = compiledDataSheet.getRange(1,1,1,fetchLastHeaderColumn).getValues()[0]
+
+//   // Logger.log(fetchHeaderRowValues) 
+
+//   var headerMapBuilder = {}
+
+//   fetchHeaderRowValues.forEach(function(headerName, index){
+//     // Logger.log(headerName + " : " + index) - working pulling Header and Index position
+
+//     if(headerName) {
+//       headerMapBuilder[headerName] = index + 1 
+//     }
+
+//   })
+
+//   Logger.log(headerMapBuilder)
+//   // return headerCheckMap(headerMapBuilder)
+
+// }
+
+// function headerCheckMap(newmap){
+//   Logger.log(newmap)
+
+
+//   for (const key in newmap){
+//   Logger.log(key.toLowerCase().toLowerCase().replace(/\s/g, ''))
+  
+//   }
+
+//   Logger.log(newmap)
+
+
+// }
+
+
+//-------------------------------------- Header Map Function --------------------------------------
+
+function normilizedHeader(headerNormalizer) {
+  if(!headerNormalizer) return ''
+
+  return headerNormalizer.toString().trim().toLowerCase().replace(/\s/g, '')
+
+}
+
+
+
+function headerMapBuild() {
+  var fetchLastHeaderColumn = compiledDataSheet.getLastColumn();
+  var fetchHeaderRowValues = compiledDataSheet.getRange(1,1,1,fetchLastHeaderColumn).getValues()[0]
+
+  // Logger.log(fetchHeaderRowValues) 
+
+  var headerMapBuilder = {}
+
+  fetchHeaderRowValues.forEach(function(headerNormalizer, index){
+    // Logger.log(headerName + " : " + index) - working pulling Header and Index position
+
+    if (!headerNormalizer) return;
+
+    var normalizedText = normilizedHeader(headerNormalizer)
+    headerMapBuilder[normalizedText] = index + 1 
+    Logger.log(`The text has been normalized ` + normalizedText)
+
+
+  })
+
+  Logger.log(headerMapBuilder)
+
+  // return headerCheckMap(headerMapBuilder)
+
+}
+
+// function headerCheckMap(newmap){
+//   Logger.log(newmap)
+
+
+//   for (const key in newmap){
+//   Logger.log(key.toLowerCase().replace(/\s/g, ''))
+  
+//   }
+
+//   Logger.log(newmap)
+
+
+// }
+
+
 //-------------------------------------- Open External Sheet --------------------------------------
 function openExternalSheets(){
 
@@ -139,39 +232,13 @@ function openExternalSheets(){
 
     }
 
+    //---------------------------------------------------------------------------------------------------------------
+
   } else {
     var errorCheck = `Remember to check sheet and confirm uploads first`
-    SpreadsheetApp.getUi().alert(`Source sheet "${errorCheck}" not found in the external URL.`);
+    SpreadsheetApp.getUi().alert(`${errorCheck}`);
     return
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
