@@ -1,0 +1,256 @@
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  // Or DocumentApp, SlidesApp or FormApp.
+  ui.createMenu('Manager Menu')
+      .addItem('Check Uploaded Sheets', 'usersSheetLinks')
+      .addSeparator()
+      .addItem('Pull External Sheets', 'userLinkSplitter')
+      .addToUi();
+}
+
+
+MAIN_HEADER_NORMALIZED_LIST = []
+EXTERNAL_HEADER_NORMALIZED_LIST = {}
+
+
+
+// Manager Constant
+const getManagerSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Manger Dashboard")
+  
+  
+// Compiling Sheet Overview Constant 
+const compiledDataSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+
+// userExternalSpreadSheet - Range and VALUES = Constant Declaration 
+const userExternalSpreadSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usersExternalSheets")
+const range = userExternalSpreadSheet.getRange("A1:D10")
+const values = range.getValues()
+
+// var externalSheetLinks = [] - Was used for checks
+
+////---------------------------------------- External Sheet Upload Checker (Checks who uploaded their sheets and who didn't)----------------------------------------------------------------------- 
+function usersSheetLinks() {
+
+  for (let i = 0; i < values.length; i++) {
+
+      
+      // Those who have NOT uploaded their sheet will execute the following below      
+      if(values[i][0] == '' && values[i][1] != ''){
+        userExternalSpreadSheet.getRange(i+1, 3).setValue('FALSE')
+        // userExternalSpreadSheet.getRange(i+1, 4).setValue(`${values[i][1]} did not upload the sheet yet.`)
+
+        // This is for the manager view ------------------------------------------
+        getManagerSheet.getRange(i+2, 1).setBackground('#e63946')
+        getManagerSheet.getRange(i+2, 2).setBackground('#e63946').setValue('FALSE')
+        getManagerSheet.getRange(i+2, 3).setBackground('#e63946').setValue(new Date())
+        getManagerSheet.getRange(i+2, 4).setBackground('#e63946').setValue(`${values[i][1]} did not upload the sheet yet.`)
+
+        //------------------------------------------ 
+
+        Logger.log(values[i][1])
+
+      } else if(values[i][0] == '' && values[i][1] == ''){
+          break
+        }
+
+
+      // Those who have uploaded their sheet will execute the following below
+      if (values[i][0] != '' && values[i][1] != '' && values[i][2] == false){
+        userExternalSpreadSheet.getRange(i+1, 3).setValue('TRUE')
+
+        // push the external sheet to the array:
+
+  
+        // This is for the manager view ------------------------------------------
+        getManagerSheet.getRange(i+2, 1).setBackground('#57cc99')
+        getManagerSheet.getRange(i+2, 2).setBackground('#57cc99').setValue('TRUE')
+        getManagerSheet.getRange(i+2, 3).setBackground('#57cc99').setValue(new Date())
+        getManagerSheet.getRange(i+2, 4).setBackground('#57cc99').setValue(`${values[i][1]} has Completed`)
+        //------------------------------------------ 
+      }
+      // externalSheetLinks.push(values[i][0]) - working pushing the URL's into the externalSheetLinks array
+ 
+    // Logger.log(values[i][0])
+
+
+    // Changing the state of the the checkbox to check of compiler
+    getManagerSheet.getRange(10,2).setBackground('#57cc99').setValue('TRUE')
+    getManagerSheet.getRange(10,3).setValue(new Date())
+
+  }
+  // Logger.log(numRows.length())
+  // Logger.log(numRows)
+  // Logger.log(numColumns)
+  // openExternalSheets(externalSheetLinks) - Was a check to see it pulled throught to the next function - Worked - Not using
+
+
+}
+//---------------------------------------------------------------------------------------------------------------
+
+
+//-------------------------------------- Double Map practice --------------------------------------
+
+// function headerMapBuild() {
+//   var fetchLastHeaderColumn = compiledDataSheet.getLastColumn();
+//   var fetchHeaderRowValues = compiledDataSheet.getRange(1,1,1,fetchLastHeaderColumn).getValues()[0]
+
+//   // Logger.log(fetchHeaderRowValues) 
+
+//   var headerMapBuilder = {}
+
+//   fetchHeaderRowValues.forEach(function(headerName, index){
+//     // Logger.log(headerName + " : " + index) - working pulling Header and Index position
+
+//     if(headerName) {
+//       headerMapBuilder[headerName] = index + 1 
+//     }
+
+//   })
+
+//   Logger.log(headerMapBuilder)
+//   // return headerCheckMap(headerMapBuilder)
+
+// }
+
+// function headerCheckMap(newmap){
+//   Logger.log(newmap)
+
+
+//   for (const key in newmap){
+//   Logger.log(key.toLowerCase().toLowerCase().replace(/\s/g, ''))
+  
+//   }
+
+//   Logger.log(newmap)
+
+
+// }
+
+
+function normalizeHeadersFunc (header){
+
+  var headerNormalized = header.toLowerCase().replace(/\s/g, '')
+  return headerNormalized
+
+}
+
+function masterSheetHeaderMapper() {
+
+  var mainCompilerSheetHeadersRaw = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+
+  var getRowHeaders = mainCompilerSheetHeadersRaw.getRange(1,1,1, mainCompilerSheetHeadersRaw.getLastColumn()).getValues()
+
+  getRowHeaders.forEach(function(header){
+    Logger.log(header)
+    for(let i = 0; i < header.length; i++){
+
+      var completedNormalizedHeader = normalizeHeadersFunc(header[i])
+
+      MAIN_HEADER_NORMALIZED_LIST.push(completedNormalizedHeader)
+    
+      // Logger.log(completedNormalizedHeader)
+
+      // Logger.log("This is the main sheet with Headers: " + getRowHeaders)
+
+    }
+  })
+
+  // Logger.log(MAIN_HEADER_NORMALIZED_LIST)
+
+  return normalizedHeaderComparer(MAIN_HEADER_NORMALIZED_LIST)
+
+}
+
+function externalSheetOpener(sheetName, userLink) {
+
+  var openlink = SpreadsheetApp.openByUrl(userLink).getSheetByName(sheetName)
+
+  var externalUserHeaderRowCounter = openlink.getLastRow()
+  var externalUserHeaderColumnCounter = openlink.getLastColumn()
+
+  // Logger.log(`This Sheet Belongs to: ${sheetName}` + userLink) working
+  // Logger.log(externalUserHeaderRowCounter)
+  // Logger.log(externalUserHeaderColumnCounter)
+
+  var userCollectedHeaders = openlink.getRange(1,1,1, externalUserHeaderColumnCounter).getValues()
+
+  userCollectedHeaders.forEach(function(externalheader){
+
+    for(let i = 0; i <  userCollectedHeaders.length; i++) {
+      sheetheaders = normalizeHeadersFunc(externalheader[i])
+      EXTERNAL_HEADER_NORMALIZED_LIST.sheetName = sheetheaders
+
+
+    }
+
+  })
+
+
+  
+  Logger.log(sheetheaders)
+  Logger.log(EXTERNAL_HEADER_NORMALIZED_LIST)
+
+  
+
+}
+
+
+function userLinkSplitter(){
+  var externalUserLinksPage = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usersExternalSheets")
+  var usersRowCounter = externalUserLinksPage.getLastRow()
+  var usersColumnCounter = externalUserLinksPage.getLastColumn()
+
+  var getUserDataNames = externalUserLinksPage.getRange(2, 4, usersRowCounter -1, 1).getValues()
+  var getUserDataSheetLinks = externalUserLinksPage.getRange(2, 1, usersRowCounter -1, 1).getValues()
+
+
+  Logger.log(usersRowCounter)
+  Logger.log(usersColumnCounter)
+  Logger.log(getUserDataNames)
+  Logger.log(getUserDataSheetLinks)
+
+
+  getUserDataNames.forEach(function(name, index){
+
+
+    // checking that links and sheet names aren't empty
+    if(name != "" && getUserDataSheetLinks[index][0] != ""){
+
+      var providedLinks = getUserDataSheetLinks[index][0]
+
+      externalSheetOpener(name, providedLinks)
+
+      // Logger.log(`This Sheet Belongs to: ${name}` + getUserDataSheetLinks[index][0]) - working 
+
+      // Logger.log(`You've made it to the next level: ${name}`) - working
+    }
+
+
+  })
+
+
+}
+
+function normalizedHeaderComparer(headerMain){
+  Logger.log("This is normalized header Main: " +  headerMain)
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
