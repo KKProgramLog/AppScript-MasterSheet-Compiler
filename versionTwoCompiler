@@ -4,13 +4,17 @@ function onOpen() {
   ui.createMenu('Manager Menu')
       .addItem('Check Uploaded Sheets', 'usersSheetLinks')
       .addSeparator()
-      .addItem('Pull External Sheets', 'userLinkSplitter')
+      .addItem('Pull External Sheets', 'compareSheetHeaders')
+      .addSeparator()
+      .addItem('Compare Figures', 'budgetCompareCalc')
       .addToUi();
 }
 
 
 MAIN_HEADER_NORMALIZED_LIST = []
-EXTERNAL_HEADER_NORMALIZED_LIST = {}
+EXTERNAL_HEADER_NORMALIZED_LIST = []
+
+var externalSheetArray = {}
 
 
 
@@ -127,12 +131,14 @@ function usersSheetLinks() {
 // }
 
 
-function normalizeHeadersFunc (header){
+function normalizeHeadersFunc(header){
 
   var headerNormalized = header.toLowerCase().replace(/\s/g, '')
   return headerNormalized
 
 }
+
+//---------------------------- Specific for the Main Header sheets ---------------------------------------------------
 
 function masterSheetHeaderMapper() {
 
@@ -141,7 +147,6 @@ function masterSheetHeaderMapper() {
   var getRowHeaders = mainCompilerSheetHeadersRaw.getRange(1,1,1, mainCompilerSheetHeadersRaw.getLastColumn()).getValues()
 
   getRowHeaders.forEach(function(header){
-    Logger.log(header)
     for(let i = 0; i < header.length; i++){
 
       var completedNormalizedHeader = normalizeHeadersFunc(header[i])
@@ -153,13 +158,18 @@ function masterSheetHeaderMapper() {
       // Logger.log("This is the main sheet with Headers: " + getRowHeaders)
 
     }
+    
   })
 
   // Logger.log(MAIN_HEADER_NORMALIZED_LIST)
 
-  return normalizedHeaderComparer(MAIN_HEADER_NORMALIZED_LIST)
+  return MAIN_HEADER_NORMALIZED_LIST
 
 }
+
+
+//---------------------------- Normalising Headers Of each external sheet and push to OBJECT ---------------------------------------------------
+
 
 function externalSheetOpener(sheetName, userLink) {
 
@@ -168,32 +178,56 @@ function externalSheetOpener(sheetName, userLink) {
   var externalUserHeaderRowCounter = openlink.getLastRow()
   var externalUserHeaderColumnCounter = openlink.getLastColumn()
 
-  // Logger.log(`This Sheet Belongs to: ${sheetName}` + userLink) working
+  // Logger.log(`This Sheet Belongs to: ${sheetName}` + userLink) 
   // Logger.log(externalUserHeaderRowCounter)
-  // Logger.log(externalUserHeaderColumnCounter)
+  // Logger.log(openlink)
+
 
   var userCollectedHeaders = openlink.getRange(1,1,1, externalUserHeaderColumnCounter).getValues()
 
-  userCollectedHeaders.forEach(function(externalheader){
+  userCollectedHeaders[0].forEach(function(externalheader){
+    
+    var nomralizedExternalHeaders = normalizeHeadersFunc(externalheader)
 
-    for(let i = 0; i <  userCollectedHeaders.length; i++) {
-      sheetheaders = normalizeHeadersFunc(externalheader[i])
-      EXTERNAL_HEADER_NORMALIZED_LIST.sheetName = sheetheaders
+    // Logger.log(sheetName)
 
+
+    var key = sheetName[0].toLowerCase().replace(/\s/g, '')
+
+    if(externalSheetArray[key]){
+
+      externalSheetArray[key].push(nomralizedExternalHeaders)
+
+    } else {
+
+      externalSheetArray[key] = [nomralizedExternalHeaders]
 
     }
+    // heetheaders = normalizeHeadersFunc(externalheader[index])
+    //   EXTERNAL_HEADER_NORMALIZED_LIST[sheetName] = nomralizedExternalHeaders
+
+    Logger.log("This is my normalizedHeaders: " + nomralizedExternalHeaders)
+
+    // EXTERNAL_HEADER_NORMALIZED_LIST.push(nomralizedExternalHeaders)
+
 
   })
 
+  // var counter = 0
+  // counter++
 
-  
-  Logger.log(sheetheaders)
-  Logger.log(EXTERNAL_HEADER_NORMALIZED_LIST)
 
-  
+
+  // Logger.log(counter)
+  // Logger.log(externalSheetArray)
+  // Logger.log(externalSheetArray.johnsheet[0])
+
+  return externalSheetArray
 
 }
 
+
+//---------------------------- Splitting and checking links and Sheetnames ---------------------------------------------------
 
 function userLinkSplitter(){
   var externalUserLinksPage = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usersExternalSheets")
@@ -204,10 +238,10 @@ function userLinkSplitter(){
   var getUserDataSheetLinks = externalUserLinksPage.getRange(2, 1, usersRowCounter -1, 1).getValues()
 
 
-  Logger.log(usersRowCounter)
-  Logger.log(usersColumnCounter)
-  Logger.log(getUserDataNames)
-  Logger.log(getUserDataSheetLinks)
+  // Logger.log(usersRowCounter)
+  // Logger.log(usersColumnCounter)
+  // Logger.log(getUserDataNames)
+  // Logger.log(getUserDataSheetLinks)
 
 
   getUserDataNames.forEach(function(name, index){
@@ -218,9 +252,10 @@ function userLinkSplitter(){
 
       var providedLinks = getUserDataSheetLinks[index][0]
 
+
       externalSheetOpener(name, providedLinks)
 
-      // Logger.log(`This Sheet Belongs to: ${name}` + getUserDataSheetLinks[index][0]) - working 
+      // Logger.log(`This Sheet Belongs to: ${name}` + getUserDataSheetLinks[index][0]) 
 
       // Logger.log(`You've made it to the next level: ${name}`) - working
     }
@@ -231,11 +266,270 @@ function userLinkSplitter(){
 
 }
 
-function normalizedHeaderComparer(headerMain){
-  Logger.log("This is normalized header Main: " +  headerMain)
+// ------------ Now to compare the the external Mastersheet headers vs the external sheet headers to ensure it's correct ----------------
+
+
+// Next step to complete - Need to open external sheet and get ranges based on data - Line 288
+
+function compareSheetHeaders(){
+
+  
+
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow()
+  var usersColumnCounter = getExteralSheetDataPrep.getLastColumn()
+
+
+  var getSheetNameRowHeaders = getExteralSheetDataPrep.getRange(1,1, usersRowCounter, usersColumnCounter).getValues()
+
+  // Logger.log(getSheetNameRowHeaders[0])
+
+
+  var externalUserLinksPage = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usersExternalSheets")
+  var usersRowCounter = externalUserLinksPage.getLastRow()
+  var usersColumnCounter = externalUserLinksPage.getLastColumn()
+
+  var getUserDataNames = externalUserLinksPage.getRange(2, 4, usersRowCounter -1, 1).getValues()
+  var getUserDataSheetLinks = externalUserLinksPage.getRange(2, 1, usersRowCounter -1, 1).getValues()
+
+
+  // Logger.log(usersRowCounter)
+  // Logger.log(usersColumnCounter)
+  // Logger.log(getUserDataNames)
+  // Logger.log(getUserDataSheetLinks)
+
+
+
+  getUserDataNames.forEach(function(name, index){
+
+    // checking that links and sheet names aren't empty
+    if(name != "" && getUserDataSheetLinks[index][0] != ""){
+
+      // Logger.log(`This Sheet Belongs to: ${name}` + ": " + getUserDataSheetLinks[index][0]) 
+      // Logger.log(getUserDataSheetLinks[index][0]) 
+      // Logger.log(`You've made it to the next level: ${name}`)
+
+
+      // openSubmittedSheets(name, getUserDataSheetLinks[index][0])
+      getData(name, getUserDataSheetLinks[index][0])
+
+
+    }
+
+  })
+
 
 
 }
+
+function openSubmittedSheets(sheetOwner, sheetOwnerLink){
+  
+  var openlink = SpreadsheetApp.openByUrl(sheetOwnerLink).getSheetByName(sheetOwner)
+  // Logger.log(`We've called the openSubmittedsheet for sheet ${sheetOwner} and here it can be accessed ${sheetOwnerLink}`)
+
+  var fetchExternalDataFromSheets = openlink.getDataRange().getValues()
+
+  // Logger.log(fetchExternalDataFromSheets[0])
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow()
+  var usersColumnCounter = getExteralSheetDataPrep.getLastColumn()
+
+
+  var getSheetNameRowHeaders = getExteralSheetDataPrep.getRange(1,1, usersRowCounter, usersColumnCounter).getValues()
+
+
+  // Logger.log(fetchExternalDataFromSheets[0])
+  // Logger.log(getSheetNameRowHeaders[0])
+
+  let counter = 0
+
+  for(let i = 0; i < getSheetNameRowHeaders[0].length; i++) {
+    // Logger.log(counter++)
+    var mainSheetPlaceholder = getSheetNameRowHeaders[0][i].toString().trim().toUpperCase()
+    var externalSheetPlaceholder = fetchExternalDataFromSheets[0][i].toString().trim().toUpperCase()
+    // Logger.log(`This is the mainSheetPlaceholder: ${mainSheetPlaceholder} vs ${externalSheetPlaceholder}`)
+    if(mainSheetPlaceholder != externalSheetPlaceholder) {
+      Logger.log("We found a mistake at with sheetHolder " + sheetOwner + " at the column " + externalSheetPlaceholder)
+      return
+    } else {
+      var appendSheetMainStartPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetOwner)
+
+      var externalSheetRowGrabber = appendSheetMainStartPrep.getLastRow()
+      var externalSheetColumnGrabber = appendSheetMainStartPrep.getLastColumn()
+
+      var dataToAppendCollection = getExteralSheetDataPrep.getRange(2,1, externalSheetRowGrabber, externalSheetColumnGrabber).getValues()
+      Logger.log(`This is the data to bew Appended: ${dataToAppendCollection}`)
+
+
+    }
+  }
+
+
+
+
+  // if(fetchExternalDataFromSheets[0] === getSheetNameRowHeaders[0]){
+
+  //   Logger.log(`Okay sheet ${sheetOwner} has qualified to make it to the next round.`)
+
+  // } else {
+  //   Logger.log(`Okay sheet ${sheetOwner} is not the same.`)
+
+  // }
+
+
+}
+
+
+
+function getData(sheetname, sheetlink){
+  var openlink = SpreadsheetApp.openByUrl(sheetlink).getSheetByName(sheetname)
+
+  var fetchLastRow = openlink.getLastRow()
+  var fetchLastColumn = openlink.getLastColumn()
+
+  Logger.log("Number of Rows: " + fetchLastRow)
+  Logger.log("Number of Columns: " + fetchLastColumn)
+
+  var getDataFromSheet = openlink.getRange(2, 1, fetchLastRow - 1, fetchLastColumn).getValues()
+
+  Logger.log("This is sheet: " + sheetname + " And this is it's data: " + getDataFromSheet)
+
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow() + 1
+
+  getExteralSheetDataPrep.getRange(usersRowCounter, 1, fetchLastRow - 1, fetchLastColumn).setValues(getDataFromSheet)
+  
+
+}
+
+
+function placeholder(){
+
+      var externalUserHeaderColumnCounter = openlink.getLastColumn()
+      var externalUserHeaderRowCounter = openlink.getLastRow() - 1
+      
+      var userCollectedHeaders = openlink.getRange(1,1,1, externalUserHeaderColumnCounter).getValues()
+
+      Logger.log(userCollectedHeaders[0])
+
+
+      Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + externalUserHeaderRowCounter)
+
+      Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + getSheetNameRowHeaders)
+
+
+      // if(getSheetNameRowHeaders[0][index] ==  userCollectedHeaders[0][index]){  
+
+      //   Logger.log("This is the sheet name: " + name)
+      //   Logger.log("This is the " + getSheetNameRowHeaders[0][index])
+
+
+      //   // }
+
+
+      // }
+}
+
+
+function completeHeaderCheckForDataCompiler(mainSheet, externalSheet) {
+
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow()
+  var usersColumnCounter = getExteralSheetDataPrep.getLastColumn()
+
+
+  var getSheetNameRowHeaders = getExteralSheetDataPrep.getRange(1,1, usersRowCounter, usersColumnCounter).getValues()
+
+  Logger.log(getSheetNameRowHeaders)
+
+  // Object.keys(externalSheetArray).forEach(key => {
+  //   // Logger.log(key)
+  //   // Logger.log(typeof externalSheetArray[key][0])
+
+
+  //   for(let i = 0; i < MAIN_HEADER_NORMALIZED_LIST.length; i++){
+
+  //     // Logger.log(MAIN_HEADER_NORMALIZED_LIST[i])
+  //     // Logger.log(externalSheetArray[key][i])
+
+  //     if(MAIN_HEADER_NORMALIZED_LIST[i] === externalSheetArray[key][i]){
+  //       Logger.log("You've made the cut " + externalSheetArray[key][i])
+
+
+
+  //       var externalUserHeaderRowCounter = openlink.getLastRow()
+  //       var externalUserHeaderColumnCounter = openlink.getLastColumn()
+
+
+  //       var fetchDataToAppend = openlink.getRange(2, 1, 2, 2).getValues()
+
+  //       Logger("Sheet Data: " + fetchDataToAppend)
+
+
+
+  //     } else {
+  //       Logger.log("You've not made the cut " + key + ": " + externalSheetArray[key][i])
+  //     }
+
+
+  //     // if(MAIN_HEADER_NORMALIZED_LIST[i] !== externalSheetArray[key][i]){
+
+  //     //   Logger.log("You've not made the cut " + key + " " + externalSheetArray[key])
+
+
+
+  //     // }
+    
+  //   }
+  
+
+  // })
+
+}
+
+
+function triggerCompilerCheckDataCompiler() {
+  
+  return completeHeaderCheckForDataCompiler(masterSheetHeaderMapper(), userLinkSplitter())
+
+}
+
+
+function budgetCompareCalc(){
+  
+  var compiledSheetView = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+
+  var rangeView = compiledSheetView.getLastRow()
+  var budgetColumn = compiledSheetView.getRange(2,4, rangeView - 1).getValues()
+  var spendColumn = compiledSheetView.getRange(2,5, rangeView - 1).getValues()
+
+  Logger.log(budgetColumn)
+  Logger.log(spendColumn)
+
+  for(let i = 0; i < budgetColumn.length; i++){
+
+    Logger.log(budgetColumn[i][0])
+
+
+
+    if(budgetColumn[i][0] > spendColumn[i][0]){
+
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet").getRange(i+2, 4).setBackground('#57cc99')
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet").getRange(i+2, 5).setBackground('#57cc99')
+      
+    } else if (budgetColumn[i][0] < spendColumn[i][0]) {
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet").getRange(i+2, 4).setBackground('#ef798a')
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet").getRange(i+2, 5).setBackground('#ef798a')
+    }
+
+  }
+
+
+
+}
+
 
 
 
