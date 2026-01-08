@@ -7,6 +7,8 @@ function onOpen() {
       .addItem('Pull External Sheets', 'compareSheetHeaders')
       .addSeparator()
       .addItem('Compare Figures', 'budgetCompareCalc')
+      .addSeparator()
+      .addItem('Calculate Spend', 'executeCalcs')
       .addToUi();
 }
 
@@ -269,12 +271,21 @@ function userLinkSplitter(){
 // ------------ Now to compare the the external Mastersheet headers vs the external sheet headers to ensure it's correct ----------------
 
 
-// Next step to complete - Need to open external sheet and get ranges based on data - Line 288
+// This function clear Content from the Main compiling sheet
+function clearCompiledContent(){
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow()
+  var usersColumnCounter = getExteralSheetDataPrep.getLastColumn()
+
+  getExteralSheetDataPrep.getRange(2,1, usersRowCounter, usersColumnCounter).clearContent().setBackground(null)
+
+}
+
 
 function compareSheetHeaders(){
 
+  clearCompiledContent()
   
-
   var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
   
   var usersRowCounter = getExteralSheetDataPrep.getLastRow()
@@ -310,14 +321,54 @@ function compareSheetHeaders(){
       // Logger.log(getUserDataSheetLinks[index][0]) 
       // Logger.log(`You've made it to the next level: ${name}`)
 
-
       // openSubmittedSheets(name, getUserDataSheetLinks[index][0])
       getData(name, getUserDataSheetLinks[index][0])
 
-
     }
-
   })
+
+}
+
+
+function executeCalcs(){
+
+  var getExteralSheetDataPrep = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Main Sheet")
+  var usersRowCounter = getExteralSheetDataPrep.getLastRow()
+
+
+  var budgetTotal = getExteralSheetDataPrep.getRange(2,4, usersRowCounter -1).getValues()
+  var spendTotal = getExteralSheetDataPrep.getRange(2,5, usersRowCounter -1).getValues()
+
+  var targetBudgetTotalDisplay = getExteralSheetDataPrep.getRange(usersRowCounter + 2, 4)
+  var targetSpendTotalDisplay = getExteralSheetDataPrep.getRange(usersRowCounter + 2, 5)
+  var differenceDisplay = getExteralSheetDataPrep.getRange(usersRowCounter + 3, 5)
+
+  var indicatorNotice = getExteralSheetDataPrep.getRange(usersRowCounter + 3, 4)
+
+
+
+
+  targetBudgetTotalDisplay.setFormula(`=SUM(${budgetTotal})`)
+  targetSpendTotalDisplay.setFormula(`=SUM(${spendTotal})`)
+
+  if(targetBudgetTotalDisplay.getValue() > targetSpendTotalDisplay.getValue()) {
+    Logger.log("We're calculating the difference and you are in budget")
+
+    var inBudgetDifference = targetBudgetTotalDisplay.getValue() - targetSpendTotalDisplay.getValue()
+
+    differenceDisplay.setValue(inBudgetDifference).setBackground("#57cc99")
+    indicatorNotice.setValue("We're In Budget").setBackground("#57cc99")
+
+  } else if (targetSpendTotalDisplay.getValue() > targetBudgetTotalDisplay.getValue()){
+
+    var inBudgetDifference = targetBudgetTotalDisplay.getValue() - targetSpendTotalDisplay.getValue()
+
+    Logger.log(inBudgetDifference)
+
+    differenceDisplay.setValue(inBudgetDifference).setBackground("#ef798a")
+    indicatorNotice.setValue("We're Outside Budget").setBackground("#ef798a")
+
+  }
 
 
 
@@ -365,9 +416,6 @@ function openSubmittedSheets(sheetOwner, sheetOwnerLink){
     }
   }
 
-
-
-
   // if(fetchExternalDataFromSheets[0] === getSheetNameRowHeaders[0]){
 
   //   Logger.log(`Okay sheet ${sheetOwner} has qualified to make it to the next round.`)
@@ -406,29 +454,29 @@ function getData(sheetname, sheetlink){
 
 function placeholder(){
 
-      var externalUserHeaderColumnCounter = openlink.getLastColumn()
-      var externalUserHeaderRowCounter = openlink.getLastRow() - 1
-      
-      var userCollectedHeaders = openlink.getRange(1,1,1, externalUserHeaderColumnCounter).getValues()
+  var externalUserHeaderColumnCounter = openlink.getLastColumn()
+  var externalUserHeaderRowCounter = openlink.getLastRow() - 1
+  
+  var userCollectedHeaders = openlink.getRange(1,1,1, externalUserHeaderColumnCounter).getValues()
 
-      Logger.log(userCollectedHeaders[0])
-
-
-      Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + externalUserHeaderRowCounter)
-
-      Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + getSheetNameRowHeaders)
+  Logger.log(userCollectedHeaders[0])
 
 
-      // if(getSheetNameRowHeaders[0][index] ==  userCollectedHeaders[0][index]){  
+  Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + externalUserHeaderRowCounter)
 
-      //   Logger.log("This is the sheet name: " + name)
-      //   Logger.log("This is the " + getSheetNameRowHeaders[0][index])
-
-
-      //   // }
+  Logger.log(`This is the amount of rows in the external Sheet ${name}: ` + getSheetNameRowHeaders)
 
 
-      // }
+  // if(getSheetNameRowHeaders[0][index] ==  userCollectedHeaders[0][index]){  
+
+  //   Logger.log("This is the sheet name: " + name)
+  //   Logger.log("This is the " + getSheetNameRowHeaders[0][index])
+
+
+  //   // }
+
+
+  // }
 }
 
 
